@@ -109,6 +109,8 @@ class AssistantActivity : AppCompatActivity() {
         overridePendingTransition(R.anim.non_movable, R.anim.non_movable)
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_assistant)
+//        binding = ActivityAssistantBinding.inflate(layoutInflater)
+//        setContentView(binding.root)
 
         val application = requireNotNull(this).application
         val dataSource = AssistantDatabase.getInstance(application).assistantDao
@@ -668,7 +670,7 @@ class AssistantActivity : AppCompatActivity() {
 
     }
 
-    //Incomeplete
+    //Incomplete
     private fun weather() {
 //        if(keeper.contains("Fahrenheit")) {
 //            helper.setUnits(Units.IMPERIAL)
