@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'kotlin-android'
+    id 'kotlin-kapt'
 }
 
 android {
@@ -29,6 +30,13 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+
+    dataBinding {
+        enabled = true
+    }
+//
+//    aaptOptions.cruncherEnabled = false
+//    aaptOptions.useNewCruncher = false
 }
 
 dependencies {
@@ -40,4 +48,49 @@ dependencies {
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+
+    //recycler view
+    implementation("androidx.recyclerview:recyclerview:1.2.1")
+    // For control over item selection of both touch and mouse driven selection
+    implementation("androidx.recyclerview:recyclerview-selection:1.1.0")
+
+    //lifecycle
+    implementation'androidx.lifecycle:lifecycle-extensions:2.2.0'
+    //livedata
+    implementation'androidx.lifecycle:lifecycle-livedata-ktx:2.3.1'//2.2.0
+    //view model
+    implementation'androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.1'//2.2.0
+
+    //room database
+    def room_version = "2.3.0"//"2.2.6"
+    implementation"androidx.room:room-runtime:$room_version"
+    kapt"androidx.room:room-compiler:$room_version"
+
+    implementation"androidx.room:room-ktx:$room_version"
+    testImplementation"androidx.room:room-testing:$room_version"
+
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.7"//1.3.7
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.7"//1.3.7
+
+    //ML Kit Vision
+    implementation 'com.google.android.gms:play-services-mlkit-text-recognition:16.1.2'//17.0.0
+
+    //Text2Summary
+    //implementation 'com.github.shubham0204:Text2Summary-Android:alpha-05'
+
+    //ImageCropper
+    implementation 'com.theartofdev.edmodo:android-image-cropper:2.8.0'
+
+    //open weather api
+    //implementation 'com.github.KwabenBerko:OpenWeatherMap-Android-Library:2.1.0'
+
+    //horoscope
+    implementation 'the.bot.box:horoscope-api:1.0.2'
+
+
+    // New version
+//    def multidex_version = "2.0.1"
+//    implementation "androidx.multidex:multidex:$multidex_version"
+
+
 }

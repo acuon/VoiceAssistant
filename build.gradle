@@ -3,6 +3,10 @@ buildscript {
     repositories {
         google()
         mavenCentral()
+
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://dl.bintray.com/wotomas/maven' }
+
     }
     dependencies {
         classpath "com.android.tools.build:gradle:7.0.0"
