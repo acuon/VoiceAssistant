@@ -108,9 +108,9 @@ class AssistantActivity : AppCompatActivity() {
 
         overridePendingTransition(R.anim.non_movable, R.anim.non_movable)
 
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_assistant)
-//        binding = ActivityAssistantBinding.inflate(layoutInflater)
-//        setContentView(binding.root)
+//        binding = DataBindingUtil.setContentView(this, R.layout.activity_assistant)
+        binding = ActivityAssistantBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         val application = requireNotNull(this).application
         val dataSource = AssistantDatabase.getInstance(application).assistantDao
@@ -185,6 +185,10 @@ class AssistantActivity : AppCompatActivity() {
                 Log.e(logtts, "Initialization failed")
             }
         }
+
+        keeper = "hi hello bye bye"
+
+        speak("hello how are you")
 
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
         recognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)

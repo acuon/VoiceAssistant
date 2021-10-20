@@ -6,16 +6,24 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.voiceassistant.assistant.AssistantActivity
+import com.example.voiceassistant.assistant.AssistantViewModel
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var imageActionButton: ImageButton
     val RecordAudioRequestCode: Int = 1
+
+//    private lateinit var assistantViewModel: AssistantViewModel
+
+//    private lateinit var textToSpeech: TextToSpeech
+//    private lateinit var keeper: String
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,6 +40,11 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
+
+//    fun speak(text: String) {
+//        textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, "")
+//        assistantViewModel.sendMessageToDatabase(keeper, text)
+//    }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
