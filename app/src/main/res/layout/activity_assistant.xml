@@ -37,6 +37,7 @@
             android:layout_margin="20dp"
             android:contentDescription="@string/fab_content_desc"
             app:backgroundTint="#FFFFFF"
+            android:tint="#A6A6A6"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:srcCompat="@drawable/ic_baseline_mic_24" />

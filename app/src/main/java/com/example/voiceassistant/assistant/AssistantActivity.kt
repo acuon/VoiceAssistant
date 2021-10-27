@@ -17,10 +17,7 @@ import android.hardware.camera2.CameraManager
 import android.media.Ringtone
 import android.media.RingtoneManager
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Environment
-import android.os.StrictMode
+import android.os.*
 import android.os.StrictMode.VmPolicy
 import android.provider.ContactsContract
 import android.provider.MediaStore
@@ -980,10 +977,18 @@ class AssistantActivity : AppCompatActivity() {
             })
             circularReveal.duration = 1250
             circularReveal.start()
+//            Handler(Looper.getMainLooper()).postDelayed(object : Runnable {
+//                override fun run() {
+//                    finish()
+//                }
+//            },1250)
         } else {
             super.onBackPressed()
+//            finish()
         }
     }
+
+
 
     override fun onDestroy() {
         super.onDestroy()
