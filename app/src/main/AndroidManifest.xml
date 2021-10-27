@@ -27,13 +27,13 @@
 
     <queries>
         <intent>
-            <action android:name="RecognitionService" />
+            <action android:name="android.speech.RecognitionService" />
         </intent>
 
         <package android:name="com.whatsapp" />
         <package android:name="com.google.android.gm" />
         <package android:name="com.facebook.katana" />
-        <package android:name="com.google.android.googlequicksearchbox"/>
+        <package android:name="com.google.android.googlequicksearchbox" />
     </queries>
 
     <application
@@ -55,6 +55,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity android:name="com.theartofdev.edmodo.cropper.CropImageActivity"/>
+
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr" />
     </application>
 
 </manifest>

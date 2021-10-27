@@ -6,18 +6,16 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.speech.SpeechRecognizer
-import android.speech.tts.TextToSpeech
-import android.widget.ImageButton
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.voiceassistant.assistant.AssistantActivity
-import com.example.voiceassistant.assistant.AssistantViewModel
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var imageActionButton: ImageButton
+    private lateinit var imageActionButton: FloatingActionButton
     val RecordAudioRequestCode: Int = 1
 
 //    private lateinit var assistantViewModel: AssistantViewModel
@@ -30,13 +28,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        imageActionButton = findViewById(R.id.action_button)
+        imageActionButton = findViewById(R.id.floating_action_button)
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             checkPermission()
         }
 
         imageActionButton.setOnClickListener {
-            startActivity(Intent(this, AssistantActivity::class.java))
+            startActivity(Intent(this@MainActivity, AssistantActivity::class.java))
         }
 
     }
@@ -48,7 +46,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
-        permissions: Array<out String>,
+        permissions: Array<String?>,
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)

@@ -1,6 +1,5 @@
 package com.example.voiceassistant.assistant
 
-
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,13 +18,6 @@ class AssistantAdapter: RecyclerView.Adapter<AssistantAdapter.ViewHolder>() {
             notifyDataSetChanged()
         }
 
-    class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-
-        val assistantMessage: TextView = itemView.findViewById(R.id.assistant_message)
-        val humanMessage: TextView = itemView.findViewById(R.id.human_message)
-
-    }
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val layoutInflater = LayoutInflater.from(parent.context)
         val view = layoutInflater.inflate(R.layout.assistant_item_layout, parent, false) as ConstraintLayout
@@ -39,5 +31,12 @@ class AssistantAdapter: RecyclerView.Adapter<AssistantAdapter.ViewHolder>() {
     }
 
     override fun getItemCount() = data.size
+
+    class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+
+        val assistantMessage: TextView = itemView.findViewById(R.id.assistant_message)
+        val humanMessage: TextView = itemView.findViewById(R.id.human_message)
+
+    }
 
 }

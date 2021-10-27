@@ -1,6 +1,5 @@
 package com.example.voiceassistant.assistant
 
-
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
@@ -29,7 +28,9 @@ class AssistantViewModel (
     }
 
     private fun initializeCurrentMessage() {
-        uiScope.launch { currentMessage.value = getCurrentMessageFromDatabase() }
+        uiScope.launch {
+            currentMessage.value = getCurrentMessageFromDatabase()
+        }
     }
 
     private suspend fun getCurrentMessageFromDatabase(): Assistant? {
@@ -65,8 +66,10 @@ class AssistantViewModel (
     }
 
     fun onClear() {
-        uiScope.launch { clear()
-            currentMessage.value = null }
+        uiScope.launch {
+            clear()
+            currentMessage.value = null
+        }
     }
 
     private suspend fun clear() {

@@ -1,7 +1,9 @@
 <resources>
     <string name="app_name">VoiceAssistant</string>
+    <string name="fab_content_desc">Mic Start</string>
     <string name="first_message">Hello, How can I help YOu?</string>
     <string name="second_message">Can you tell me something?</string>
-    <string name="OPEN_WEATHER_MAP_API_KEY">c0c6a0d320e22e5de649af92df449814</string>
+    <string name="OPEN_WEATHER_MAP_API_KEY">e2f18082ff618ac5a563a175973a3360</string>
+<!--    <string name="OPEN_WEATHER_MAP_API_KEY">c0c6a0d320e22e5de649af92df449814</string>-->
 <!--    <string name="OPEN_WEATHER_MAP_API_KEY">ed3367f3250df7b92e42ce5ec92e16e6</string>-->
 </resources>

@@ -1,6 +1,7 @@
 package com.example.voiceassistant.assistant
 
 import android.Manifest
+import android.Manifest.permission
 import android.animation.Animator
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
@@ -17,10 +18,10 @@ import android.media.Ringtone
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.os.StrictMode
+import android.os.StrictMode.VmPolicy
 import android.provider.ContactsContract
 import android.provider.MediaStore
 import android.provider.Telephony
@@ -35,11 +36,13 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewAnimationUtils
 import android.view.ViewTreeObserver
+import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.Toast
-import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import bot.box.horology.annotation.DURATION
 import bot.box.horology.annotation.SUNSIGN
@@ -47,8 +50,8 @@ import bot.box.horology.api.Horoscope
 import bot.box.horology.delegate.Response
 import bot.box.horology.hanshake.HorologyController
 import bot.box.horology.pojo.Zodiac
-import com.example.voiceassistant.R
 import com.example.voiceassistant.data.AssistantDatabase
+import com.example.voiceassistant.R
 import com.example.voiceassistant.databinding.ActivityAssistantBinding
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
@@ -59,9 +62,15 @@ import java.io.FileNotFoundException
 import java.io.IOException
 import java.text.DateFormat
 import java.text.SimpleDateFormat
-import java.time.Duration
 import java.util.*
-import kotlin.jvm.internal.Ref
+import kotlin.jvm.internal.Ref.ObjectRef
+/*
+import com.kwabenaberko.openweathermaplib.constant.Units
+import com.kwabenaberko.openweathermaplib.implementation.OpenWeatherMapHelper
+import com.kwabenaberko.openweathermaplib.implementation.callback.CurrentWeatherCallback
+import com.kwabenaberko.openweathermaplib.model.currentweather.CurrentWeather
+import com.ml.quaterion.text2summary.Text2Summary
+ */
 
 class AssistantActivity : AppCompatActivity() {
 
@@ -100,7 +109,8 @@ class AssistantActivity : AppCompatActivity() {
 
     @Suppress("DEPRECATION")
     private val imageDirectory =
-        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString() + "/assistant/"
+        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+            .toString() + "/assistant/"
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -108,9 +118,12 @@ class AssistantActivity : AppCompatActivity() {
 
         overridePendingTransition(R.anim.non_movable, R.anim.non_movable)
 
-//        binding = DataBindingUtil.setContentView(this, R.layout.activity_assistant)
-        binding = ActivityAssistantBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_assistant)
+//        binding = ActivityAssistantBinding.inflate(layoutInflater)
+//        setContentView(binding.root)
+
+//        name = "how can i help you"
+//        keeper = name
 
         val application = requireNotNull(this).application
         val dataSource = AssistantDatabase.getInstance(application).assistantDao
@@ -122,9 +135,9 @@ class AssistantActivity : AppCompatActivity() {
             ).get(AssistantViewModel::class.java)
 
         val adapter = AssistantAdapter()
-        binding.recyclerview.adapter = adapter
+        binding.recyclerView.adapter = adapter
 
-        assistantViewModel.message.observe(this, {
+        assistantViewModel.message.observe(this, Observer {
             it?.let {
                 adapter.data = it
             }
@@ -133,7 +146,7 @@ class AssistantActivity : AppCompatActivity() {
         binding.setLifecycleOwner(this)
         //animations
         if (savedInstanceState == null) {
-            binding.assistantConstraintLayout.setVisibility(View.INVISIBLE)
+            binding.assistantConstraintLayout.visibility = View.INVISIBLE
 
             val viewTreeObserver: ViewTreeObserver =
                 binding.assistantConstraintLayout.getViewTreeObserver()
@@ -169,26 +182,53 @@ class AssistantActivity : AppCompatActivity() {
         )
 //        helper = OpenWeatherMapHelper(getString(R.string.OPEN_WEATHER_MAP_API_KEY))
 
+//        textToSpeech = TextToSpeech(applicationContext) { status ->
+//            if (status == TextToSpeech.SUCCESS) {
+//                val result: Int = textToSpeech.setLanguage(Locale.ENGLISH)
+//
+//                if (result == TextToSpeech.LANG_MISSING_DATA ||
+//                    result == TextToSpeech.LANG_NOT_SUPPORTED
+//                ) {
+//                    Log.e(logtts, "Language not supported")
+//                } else {
+//                    Log.e(logtts, "Language supported")
+//                }
+//
+//            } else {
+//                Log.e(logtts, "Initialization failed")
+//            }
+//        }
+
+
+        //Text To Speech
         textToSpeech = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 val result: Int = textToSpeech.setLanguage(Locale.ENGLISH)
-
-                if (result == TextToSpeech.LANG_MISSING_DATA ||
-                    result == TextToSpeech.LANG_NOT_SUPPORTED
+                if (result == TextToSpeech.LANG_MISSING_DATA
+                    || result == TextToSpeech.LANG_NOT_SUPPORTED
                 ) {
+                    Toast.makeText(
+                        applicationContext,
+                        "This language is not supported",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     Log.e(logtts, "Language not supported")
                 } else {
-                    Log.e(logtts, "Language supported")
-                }
+                    Log.e(logtts, "onInit succeeded")
+//                    speak(name)
+//                    callContact()
 
+                }
             } else {
+                Toast.makeText(applicationContext, "Initialization failed", Toast.LENGTH_SHORT)
+                    .show()
                 Log.e(logtts, "Initialization failed")
             }
         }
 
-        keeper = "hi hello bye bye"
+//        keeper = "hi hello bye bye"
 
-        speak("hello how are you")
+//        speak("hello how are you")
 
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
         recognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
@@ -199,34 +239,26 @@ class AssistantActivity : AppCompatActivity() {
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
 
         speechRecognizer.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) {
-                TODO("Not yet implemented")
-            }
+            override fun onReadyForSpeech(p0: Bundle?) {}
 
             override fun onBeginningOfSpeech() {
                 Log.d("SR", "started")
             }
 
-            override fun onRmsChanged(rmsdB: Float) {
-                TODO("Not yet implemented")
-            }
+            override fun onRmsChanged(p0: Float) {}
 
-            override fun onBufferReceived(buffer: ByteArray?) {
-                TODO("Not yet implemented")
-            }
+            override fun onBufferReceived(p0: ByteArray?) {}
 
             override fun onEndOfSpeech() {
                 Log.d("SR", "ended")
             }
 
-            override fun onError(error: Int) {
-                TODO("Not yet implemented")
-            }
+            override fun onError(p0: Int) {}
 
-            @RequiresApi(Build.VERSION_CODES.O)
-            override fun onResults(bundle: Bundle?) {
+//            @RequiresApi(Build.VERSION_CODES.O)
+            override fun onResults(bundle: Bundle) {
                 //getting data
-                val data = bundle!!.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                val data = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 if (data != null) {
                     keeper = data[0]
                     Log.d(logkeeper, keeper)
@@ -264,25 +296,22 @@ class AssistantActivity : AppCompatActivity() {
                         keeper.contains("medical") -> medicalApplication()
                         keeper.contains("joke") -> joke()
                         keeper.contains("question") -> question()
-                        keeper.contains("hello") || keeper.contains("hi") || keeper.contains("hey") -> speak("Hello, how can I help you?")
+                        keeper.contains("hello") || keeper.contains("hi") || keeper.contains("hey") -> speak(
+                            "Hello, how can I help you?"
+                        )
                         else -> speak("Invalid command, try again")
 
                     }
                 }
-
             }
 
-            override fun onPartialResults(partialResults: Bundle?) {
-                TODO("Not yet implemented")
-            }
+            override fun onPartialResults(p0: Bundle?) {}
 
-            override fun onEvent(eventType: Int, params: Bundle?) {
-                TODO("Not yet implemented")
-            }
+            override fun onEvent(p0: Int, p1: Bundle?) {}
 
         })
 
-        binding.assistantActionButton.setOnTouchListener { view, motionEvent ->
+        binding.assistantFloatingActionButton.setOnTouchListener { view, motionEvent ->
 
             when (motionEvent.action) {
 
@@ -290,6 +319,7 @@ class AssistantActivity : AppCompatActivity() {
                     speechRecognizer.stopListening()
                 }
 
+                //ACTION_DOWN
                 MotionEvent.ACTION_DOWN -> {
                     textToSpeech.stop()
                     speechRecognizer.startListening(recognizerIntent)
@@ -311,9 +341,17 @@ class AssistantActivity : AppCompatActivity() {
         }
     }
 
+    // speaking text through text to speech
     fun speak(text: String) {
         textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, "")
         assistantViewModel.sendMessageToDatabase(keeper, text)
+    }
+
+    fun getTime() {
+        val calendar = Calendar.getInstance()
+        val format = SimpleDateFormat("HH:mm:ss")
+        val time: String = format.format(calendar.getTime())
+        speak("The time is $time")
     }
 
     fun getDate() {
@@ -321,63 +359,65 @@ class AssistantActivity : AppCompatActivity() {
         val formattedDate = DateFormat.getDateInstance(DateFormat.FULL).format(calendar.time)
         val splitDate = formattedDate.split(",").toTypedArray()
         val date = splitDate[1].trim { it <= ' ' }
-
         speak("The date is $date")
     }
 
-    fun getTime() {
-        val calendar = Calendar.getInstance()
-        val format = SimpleDateFormat("HH:mm:ss")
-        val time: String = format.format(calendar.time)
-
-        speak("The time is $time")
-    }
-
+    // make a phone call to 77986xxxxx
     private fun makeAPhoneCall() {
         val keeperSplit = keeper.replace(" ".toRegex(), "").split("o").toTypedArray()
         val number = keeperSplit[2]
 
-        //no space
+        // number must not have any spaces
         if (number.trim { it <= ' ' }.length > 0) {
+
+            // runtime message
             if (ContextCompat.checkSelfPermission(
-                    this,
+                    this@AssistantActivity,
                     Manifest.permission.CALL_PHONE
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 ActivityCompat.requestPermissions(
-                    this,
+                    this@AssistantActivity,
                     arrayOf(Manifest.permission.CALL_PHONE),
                     REQUESTCALL
                 )
             } else {
-                val dial = "tel$number"
+                // passing intent
+                val dial = "tel:$number"
                 speak("Calling $number")
                 startActivity(Intent(Intent.ACTION_CALL, Uri.parse(dial)))
             }
         } else {
-            Toast.makeText(this, "Enter Phone Number", Toast.LENGTH_SHORT).show()
+            // invalid phone
+            Toast.makeText(this@AssistantActivity, "Enter Phone Number", Toast.LENGTH_SHORT).show()
         }
     }
 
+    private fun makeAEmergencyPhoneCall() {
+
+    }
+
+
+    // send sms to 77986999685 that message
     private fun sendSMS() {
-
         Log.d("keeper", "Done0")
-
+        // runtime message
         if (ContextCompat.checkSelfPermission(
-                this,
+                this@AssistantActivity,
                 Manifest.permission.SEND_SMS
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.SEND_SMS), SENDSMS)
-
+            ActivityCompat.requestPermissions(
+                this@AssistantActivity,
+                arrayOf(Manifest.permission.SEND_SMS),
+                SENDSMS
+            )
             Log.d("keeper", "Done1")
         } else {
             Log.d("keeper", "Done2")
-
             val keeperReplaced = keeper.replace(" ".toRegex(), "")
             val number = keeperReplaced.split("o").toTypedArray()[1].split("t").toTypedArray()[0]
             val message = keeper.split("that").toTypedArray()[1]
-
             Log.d("chk", number + message)
             val mySmsManager = SmsManager.getDefault()
             mySmsManager.sendTextMessage(
@@ -387,21 +427,24 @@ class AssistantActivity : AppCompatActivity() {
                 null,
                 null
             )
-            speak("Message send that $message")
-
+            speak("Message sent that $message")
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    //  read my last SMS
     private fun readSMS() {
         if (ContextCompat.checkSelfPermission(
-                this,
+                this@AssistantActivity,
                 Manifest.permission.READ_SMS
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_SMS), READSMS)
+            ActivityCompat.requestPermissions(
+                this@AssistantActivity,
+                arrayOf(Manifest.permission.READ_SMS),
+                READSMS
+            )
         } else {
-            val cursor = contentResolver.query(Uri.parse("content://sms"), null, null, null)
+            val cursor = contentResolver.query(Uri.parse("content://sms"), null, null, null, null)
             cursor!!.moveToFirst()
             speak("Your last message was " + cursor.getString(12))
         }
@@ -430,47 +473,43 @@ class AssistantActivity : AppCompatActivity() {
 
     private fun shareAFile() {
         if (ContextCompat.checkSelfPermission(
-                this,
+                this@AssistantActivity,
                 Manifest.permission.READ_EXTERNAL_STORAGE
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
-                this,
-                arrayOf(
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ),
+                this@AssistantActivity,
+                arrayOf(permission.READ_EXTERNAL_STORAGE, permission.WRITE_EXTERNAL_STORAGE),
                 SHAREAFILE
             )
         } else {
-            val builder = StrictMode.VmPolicy.Builder()
+            val builder = VmPolicy.Builder()
             StrictMode.setVmPolicy(builder.build())
             val myFileIntent = Intent(Intent.ACTION_GET_CONTENT)
             myFileIntent.type = "application/pdf"
             startActivityForResult(myFileIntent, REQUEST_CODE_SELECT_DOC)
-
         }
     }
 
     private fun shareATextMessage() {
         if (ContextCompat.checkSelfPermission(
-                this,
+                this@AssistantActivity,
                 Manifest.permission.READ_EXTERNAL_STORAGE
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
-                this,
-                arrayOf(
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ),
+                this@AssistantActivity,
+                arrayOf(permission.READ_EXTERNAL_STORAGE, permission.WRITE_EXTERNAL_STORAGE),
                 SHAREATEXTFILE
             )
         } else {
-            val builder = StrictMode.VmPolicy.Builder()
+            val builder = VmPolicy.Builder()
             StrictMode.setVmPolicy(builder.build())
             val message = keeper.split("that").toTypedArray()[1]
+            //        String subject = keeper.split("with")[1];
             val intentShare = Intent(Intent.ACTION_SEND)
+            intentShare.type = "text/plain"
+            //        intentShare.putExtra(Intent.EXTRA_SUBJECT,subject);
             intentShare.putExtra(Intent.EXTRA_TEXT, message)
             startActivity(Intent.createChooser(intentShare, "Sharing Text"))
         }
@@ -478,43 +517,55 @@ class AssistantActivity : AppCompatActivity() {
 
     private fun callContact() {
         if (ContextCompat.checkSelfPermission(
-                this,
+                this@AssistantActivity,
                 Manifest.permission.READ_CONTACTS
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
-                this,
-                arrayOf(
-                    Manifest.permission.READ_CONTACTS,
-                    Manifest.permission.WRITE_CONTACTS
-                ),
+                this@AssistantActivity,
+                arrayOf(permission.READ_CONTACTS, permission.WRITE_CONTACTS),
                 READCONTACTS
             )
         } else {
-            val name = keeper.split("call").toTypedArray()[1].trim{
-                it <= ' '
-            }
+            val name = keeper.split("call").toTypedArray()[1].trim { it <= ' ' }
             Log.d("chk", name)
-
             try {
                 val cursor = contentResolver.query(
-                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI, arrayOf(
-                        ContactsContract.CommonDataKinds.Phone.NUMBER, ContactsContract.CommonDataKinds.Phone.TYPE), "DISPLAY_NAME='$name'", null, null)
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    arrayOf(
+                        ContactsContract.CommonDataKinds.Phone.NUMBER,
+                        ContactsContract.CommonDataKinds.Phone.TYPE
+                    ),
+                    "DISPLAY_NAME = '$name'",
+                    null,
+                    null
+                )
                 cursor!!.moveToFirst()
                 val number = cursor.getString(0)
-                if(number.trim { it <= ' ' }.length > 0) {
+                // number must not have any spaces
+                if (number.trim { it <= ' ' }.length > 0) {
 
-                    if(ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
-                        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CALL_PHONE), REQUESTCALL)
+                    // runtime message
+                    if (ContextCompat.checkSelfPermission(
+                            this@AssistantActivity,
+                            permission.CALL_PHONE
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        ActivityCompat.requestPermissions(
+                            this@AssistantActivity,
+                            arrayOf(permission.CALL_PHONE),
+                            REQUESTCALL
+                        )
                     } else {
+                        // passing intent
                         val dial = "tel:$number"
                         startActivity(Intent(Intent.ACTION_CALL, Uri.parse(dial)))
                     }
-
                 } else {
-                    Toast.makeText(this, "Enter phone Number", Toast.LENGTH_SHORT).show()
+                    // invalid phone
+                    Toast.makeText(this@AssistantActivity, "Enter Phone Number", Toast.LENGTH_SHORT)
+                        .show()
                 }
-
             } catch (e: Exception) {
                 e.printStackTrace()
                 speak("Something went wrong")
@@ -523,8 +574,9 @@ class AssistantActivity : AppCompatActivity() {
     }
 
     private fun turnOnBluetooth() {
-        if(!bluetoothAdapter.isEnabled()) {
-            speak("Turning on Bluetooth")
+        if (!bluetoothAdapter.isEnabled()) {
+            speak("Turning On Bluetooth...")
+            //intent to on bluetooth
             val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             startActivityForResult(intent, REQUEST_ENABLE_BT)
         } else {
@@ -533,45 +585,46 @@ class AssistantActivity : AppCompatActivity() {
     }
 
     private fun turnOffBluetooth() {
-        if(bluetoothAdapter.isEnabled()) {
+        if (bluetoothAdapter.isEnabled()) {
             bluetoothAdapter.disable()
-            speak("Turning Off Bluetooth")
+            speak("Turning Bluetooth Off")
         } else {
             speak("Bluetooth is already off")
         }
     }
 
     private fun getAllPairedDevices() {
-        if(bluetoothAdapter.isEnabled()) {
+        if (bluetoothAdapter.isEnabled()) {
             speak("Paired Devices are ")
             var text = ""
             var count = 1
             val devices: Set<BluetoothDevice> = bluetoothAdapter.getBondedDevices()
-            for(device in devices) {
+            for (device in devices) {
                 text += "\nDevice: $count ${device.name}, $device"
                 count += 1
             }
             speak(text)
         } else {
+            //bluetooth is off so can't get paired devices
             speak("Turn on bluetooth to get paired devices")
         }
     }
 
     private fun turnOnFlash() {
         try {
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 cameraManager.setTorchMode(cameraId, true)
                 speak("Flash turned on")
             }
         } catch (e: java.lang.Exception) {
             e.printStackTrace()
-            speak("Error occurred")
+            speak("Error Occured")
         }
     }
 
     private fun turnOffFlash() {
         try {
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 cameraManager.setTorchMode(cameraId, false)
                 speak("Flash turned off")
             }
@@ -582,7 +635,7 @@ class AssistantActivity : AppCompatActivity() {
 
     fun clipBoardCopy() {
         val data = keeper.split("that").toTypedArray()[1].trim { it <= ' ' }
-        if(!data.isEmpty()) {
+        if (!data.isEmpty()) {
             val clipData = ClipData.newPlainText("text", data)
             clipboardManager.setPrimaryClip(clipData)
             speak("Data copied to clipboard that is $data")
@@ -592,79 +645,106 @@ class AssistantActivity : AppCompatActivity() {
     fun clipBoardSpeak() {
         val item = clipboardManager.primaryClip!!.getItemAt(0)
         val pasteData = item.text.toString()
-        if(pasteData != "") {
-            speak("Data stored in last clipboard is "+pasteData)
+        if (pasteData != "") {
+            speak("Data stored in last clipboard is " + pasteData)
         } else {
             speak("Clipboard is Empty")
         }
     }
 
     private fun capturePhoto() {
-        if(ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE), CAPTUREPHOTO)
+        if (ContextCompat.checkSelfPermission(
+                this@AssistantActivity,
+                Manifest.permission.CAMERA
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this@AssistantActivity,
+                arrayOf(permission.CAMERA, permission.WRITE_EXTERNAL_STORAGE),
+                CAPTUREPHOTO
+            )
         } else {
-            val builder = StrictMode.VmPolicy.Builder()
+            val builder = VmPolicy.Builder()
             StrictMode.setVmPolicy(builder.build())
             imageIndex++
-            val file: String = imageDirectory+imageIndex+".jpg"
+            val file: String = imageDirectory + imageIndex + ".jpg"
             val newFile = File(file)
-
             try {
                 newFile.createNewFile()
             } catch (e: IOException) {
                 e.printStackTrace()
             }
-
             val outputFileUri = Uri.fromFile(newFile)
             val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
             cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, outputFileUri)
             startActivity(cameraIntent)
-            speak("Photo will be saved to $file")
-
+            speak("Photo  will be saved to $file")
         }
     }
 
     private fun playRingtone() {
-        speak("Playing Ringtone")
+        speak("Ringtone playing")
         ringtone.play()
     }
 
     private fun stopRingtone() {
-        speak("Ringtone Stopped")
+        speak("Ringtone stopped")
         ringtone.stop()
     }
 
     private fun readMe() {
-        CropImage.startPickImageActivity(this)
+        CropImage.startPickImageActivity(this@AssistantActivity)
     }
 
 //    private fun getTextFromBitmap(bitmap: Bitmap) {
-//        val image = InputImage.fromBitmap(bitmap, 0)
-//        val recognizer = TextRecognition.getClient()
-//        val result = recognizer.process(image)
-//            .addOnSuccessListener {
-//                visionText ->
-//
-//                val resultText = visionText.text
-//                if(keeper.contains("summarise")) {
-//                    speak("Reading Image and summarising it :\n" + summariseText(resultText))
-//                } else {
-//                    speak("Reading Image:\n" + resultText)
-//                }
-//            }
-//            .addOnFailureListener {
-//                e ->
-//                Toast.makeText(this, "Error" + e.message, Toast.LENGTH_SHORT).show()
-//            }
+//        val image : FirebaseVisionImage = FirebaseVisionImage.fromBitmap(bitmap)
+//        val textDetector : FirebaseVisionTextDetector = FirebaseVision.getInstance().visionTextDetector
+//        textDetector.detectInImage(image).addOnSuccessListener { firebaseVisionText -> displayTextFromImage(firebaseVisionText!!) }.addOnFailureListener { e -> Toast.makeText(this@AssistantActivity, "Error: " + e.message, Toast.LENGTH_SHORT).show() }
 //    }
 
-//    private fun summariseText(text: String): String? {
-//
-//        val summary: Ref.ObjectRef<*> = Ref.ObjectRef<Any?>()
+    private fun getTextFromBitmap(bitmap: Bitmap) {
+        val image = InputImage.fromBitmap(bitmap, 0)
+        val recognizer = TextRecognition.getClient()
+        val result = recognizer.process(image)
+            .addOnSuccessListener { visionText ->
+                // Task completed successfully
+                // ...
+                val resultText = visionText.text
+//                        for (block in visionText.textBlocks) {
+//                            val blockText = block.text
+//                            val blockCornerPoints = block.cornerPoints
+//                            val blockFrame = block.boundingBox
+//                            for (line in block.lines) {
+//                                val lineText = line.text
+//                                val lineCornerPoints = line.cornerPoints
+//                                val lineFrame = line.boundingBox
+//                                for (element in line.elements) {
+//                                    val elementText = element.text
+//                                    val elementCornerPoints = element.cornerPoints
+//                                    val elementFrame = element.boundingBox
+//                                }
+//                            }
+//                        }
+                if (keeper.contains("summarise")) {
+                    speak("Reading Image and Summarising it :\n" + summariseText(resultText))
+                } else {
+                    speak("Reading Image:\n" + resultText)
+
+                }
+            }
+            .addOnFailureListener { e ->
+                // Task failed with an exception
+                // ...
+                Toast.makeText(this@AssistantActivity, "Error: " + e.message, Toast.LENGTH_SHORT)
+                    .show()
+            }
+    }
+
+    private fun summariseText(text: String): String? {
+        val summary: ObjectRef<*> = ObjectRef<Any?>()
 //        summary.element = Text2Summary.Companion.summarize(text, 0.4f)
-//        return summary.element as String
-//
-//    }
+        return summary.element as String
+    }
 
     private fun setAlarm() {
 
@@ -674,17 +754,33 @@ class AssistantActivity : AppCompatActivity() {
 
     }
 
-    //Incomplete
     private fun weather() {
-//        if(keeper.contains("Fahrenheit")) {
+//        if (keeper.contains("Fahrenheit")) {
 //            helper.setUnits(Units.IMPERIAL)
-//        } else if(keeper.contains("Celsius")) {
+//        } else if (keeper.contains("Celsius")) {
 //            helper.setUnits(Units.METRIC)
 //        }
+//
 //        val keeperSplit = keeper.replace(" ".toRegex(), "").split("w").toTypedArray()
 //        val city = keeperSplit[0]
-//        helper.getCurrentWeatherByCityName(city, object: CurrentWeatherCallback {
-//            override fun on
+//        Log.d("chk", "the city is" + keeperSplit)
+//
+//        helper.getCurrentWeatherByCityName(city, object : CurrentWeatherCallback {
+//            override fun onSuccess(currentWeather: CurrentWeather) {
+//                speak(
+//                    """
+//    Coordinates: ${currentWeather.coord.lat}, ${currentWeather.coord.lon}
+//    Weather Description: ${currentWeather.weather[0].description}
+//    Temperature: ${currentWeather.main.tempMax}
+//    Wind Speed: ${currentWeather.wind.speed}
+//    City, Country: ${currentWeather.name}, ${currentWeather.sys.country}
+//    """.trimIndent()
+//                )
+//            }
+//
+//            override fun onFailure(throwable: Throwable) {
+//                speak("Error" + throwable.message)
+//            }
 //        })
     }
 
@@ -696,20 +792,18 @@ class AssistantActivity : AppCompatActivity() {
             .showLoader(true)
             .isDebuggable(true)
             .fetchHoroscope()
-
-        val cGemini = HorologyController(object: Response {
-            override fun onResponseObtained(zodiac: Zodiac?) {
-                val horoscope: String = zodiac!!.getHoroscope()
-                val sunsign: String = zodiac!!.getSunSign()
-                val date: String = zodiac!!.getDate()
-                Log.d("chk", horoscope+sunsign+date)
+        val cGemini = HorologyController(object : Response {
+            override fun onResponseObtained(zodiac: Zodiac) {
+                val horoscope: String = zodiac.getHoroscope()
+                val sunsign: String = zodiac.getSunSign()
+                val date: String = zodiac.getDate()
+                Log.d("chk", horoscope + sunsign + date)
             }
 
             override fun onErrorObtained(errormsg: String?) {
-                speak("Can't Reach Data Points")
+                speak("Can't Reach Data")
             }
         })
-
         cGemini.requestConstellations(hGemini)
     }
 
@@ -721,113 +815,122 @@ class AssistantActivity : AppCompatActivity() {
 
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    override fun onRequestPermissionsResult(requestCode: Int,
-                                            permissions: Array<out String>,
-                                            grantResults: IntArray) {
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
-        if(requestCode == REQUESTCALL) {
-            if(grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode == REQUESTCALL) {
+            if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // when permission granted
                 makeAPhoneCall()
             } else {
-                Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
+                // permission denied
+                Toast.makeText(this, "Permission DENIED", Toast.LENGTH_SHORT).show()
             }
-
-        } else if(requestCode == SENDSMS) {
-            if(grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        } else if (requestCode == SENDSMS) {
+            if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // when permission granted
                 sendSMS()
             } else {
-                Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
+                // permission denied
+                Toast.makeText(this, "Permission DENIED", Toast.LENGTH_SHORT).show()
             }
-
-        } else if(requestCode == READSMS) {
-            if(grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        } else if (requestCode == READSMS) {
+            if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // when permission granted
                 readSMS()
             } else {
-                Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
+                // permission denied
+                Toast.makeText(this, "Permission DENIED", Toast.LENGTH_SHORT).show()
             }
-
-        } else if(requestCode == SHAREAFILE) {
-            if(grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        } else if (requestCode == SHAREAFILE) {
+            if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // when permission granted
                 shareAFile()
             } else {
-                Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
+                // permission denied
+                Toast.makeText(this, "Permission DENIED", Toast.LENGTH_SHORT).show()
             }
-
-        } else if(requestCode == SHAREATEXTFILE) {
-            if(grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        } else if (requestCode == SHAREATEXTFILE) {
+            if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // when permission granted
                 shareATextMessage()
             } else {
-                Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
+                // permission denied
+                Toast.makeText(this, "Permission DENIED", Toast.LENGTH_SHORT).show()
             }
-
-        } else if(requestCode == READCONTACTS) {
-            if(grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        } else if (requestCode == READCONTACTS) {
+            if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // when permission granted
                 callContact()
             } else {
-                Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
+                // permission denied
+                Toast.makeText(this, "Permission DENIED", Toast.LENGTH_SHORT).show()
             }
-
-        } else if(requestCode == CAPTUREPHOTO) {
-            if(grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        } else if (requestCode == CAPTUREPHOTO) {
+            if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // when permission granted
                 capturePhoto()
             } else {
-                Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
+                // permission denied
+                Toast.makeText(this, "Permission DENIED", Toast.LENGTH_SHORT).show()
             }
-
         }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-
-        if(requestCode == REQUEST_CODE_SELECT_DOC && resultCode == RESULT_OK) {
+        if (requestCode == REQUEST_CODE_SELECT_DOC && resultCode == RESULT_OK) {
             val filePath = data!!.data!!.path
-            Log.d("chk", "path:$filePath")
+            Log.d("chk", "path: $filePath")
             val file = File(filePath)
             val intentShare = Intent(Intent.ACTION_SEND)
             intentShare.type = "application/pdf"
             intentShare.putExtra(Intent.EXTRA_STREAM, Uri.parse("file://$file"))
             startActivity(Intent.createChooser(intentShare, "Share the file ..."))
         }
-        if(requestCode == REQUEST_ENABLE_BT) {
-            if(requestCode == RESULT_OK) {
+        if (requestCode == REQUEST_ENABLE_BT) {
+            if (resultCode == RESULT_OK) {
                 speak("Bluetooth is on")
             } else {
-                speak("Could not able to turn on Bluetooth")
+                speak("Could'nt turn on bluetooth")
             }
         }
-        if(requestCode == CropImage.PICK_IMAGE_CHOOSER_REQUEST_CODE && resultCode == RESULT_OK) {
+
+        if (requestCode == CropImage.PICK_IMAGE_CHOOSER_REQUEST_CODE && resultCode == RESULT_OK) {
             val imageUri = CropImage.getPickImageResultUri(this, data)
             imgUri = imageUri
             startCrop(imageUri)
         }
-        if(requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
-            val result: CropImage.ActivityResult = CropImage.getActivityResult(data)
-            if(resultCode == RESULT_OK) {
-                imgUri = result.uri
 
-//                try {
-//                    val inputStream = contentResolver.openInputStream(imgUri)
-//                    val bitmap = BitmapFactory.decodeStream(inputStream)
-//                    getTextFromBitmap(bitmap)
-//                } catch (e: FileNotFoundException) {
-//                    e.printStackTrace()
-//                }
-                Toast.makeText(this, "Image Captured Successfully", Toast.LENGTH_SHORT).show()
+        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+            val result: CropImage.ActivityResult = CropImage.getActivityResult(data)
+            if (resultCode == RESULT_OK) {
+                imgUri = result.uri
+                try {
+                    val inputStream = contentResolver.openInputStream(imgUri)
+                    val bitmap = BitmapFactory.decodeStream(inputStream)
+                    getTextFromBitmap(bitmap)
+                } catch (e: FileNotFoundException) {
+                    e.printStackTrace()
+                }
+                Toast.makeText(this, "Image captured successfully !", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     private fun startCrop(imageUri: Uri) {
-        CropImage.activity(imageUri).setGuidelines(CropImageView.Guidelines.ON).setMultiTouchEnabled(true)
-            .start(this)
+        CropImage.activity(imageUri).setGuidelines(CropImageView.Guidelines.ON)
+            .setMultiTouchEnabled(true).start(this@AssistantActivity)
     }
 
     private fun circularRevealActivity() {
         val cx: Int = binding.assistantConstraintLayout.getRight() - getDips(44)
-        val cy: Int = binding.assistantConstraintLayout.getBottom() - getDips(43)
+        val cy: Int = binding.assistantConstraintLayout.getBottom() - getDips(44)
         val finalRadius: Int = Math.max(
             binding.assistantConstraintLayout.getWidth(),
             binding.assistantConstraintLayout.getHeight()
@@ -835,11 +938,9 @@ class AssistantActivity : AppCompatActivity() {
         val circularReveal = ViewAnimationUtils.createCircularReveal(
             binding.assistantConstraintLayout,
             cx,
-            cy,
-            0f,
+            cy, 0f,
             finalRadius.toFloat()
         )
-
         circularReveal.duration = 1250
         binding.assistantConstraintLayout.setVisibility(View.VISIBLE)
         circularReveal.start()
@@ -855,42 +956,30 @@ class AssistantActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             val cx: Int = binding.assistantConstraintLayout.getWidth() - getDips(44)
-            val cy: Int = binding.assistantConstraintLayout.getHeight() - getDips(44)
-
+            val cy: Int = binding.assistantConstraintLayout.getBottom() - getDips(44)
             val finalRadius: Int = Math.max(
                 binding.assistantConstraintLayout.getWidth(),
                 binding.assistantConstraintLayout.getHeight()
             )
-
-            val circularReveal = ViewAnimationUtils.createCircularReveal(
-                binding.assistantConstraintLayout, cx, cy,
-                finalRadius.toFloat(), 0f
-            )
-
-            circularReveal.addListener(object: Animator.AnimatorListener {
-                override fun onAnimationStart(p0: Animator?) {
-                    TODO("Not yet implemented")
-                }
-
-                override fun onAnimationEnd(p0: Animator?) {
+            val circularReveal =
+                ViewAnimationUtils.createCircularReveal(
+                    binding.assistantConstraintLayout, cx, cy,
+                    finalRadius.toFloat(), 0f
+                )
+            circularReveal.addListener(object : Animator.AnimatorListener {
+                override fun onAnimationStart(animator: Animator) {}
+                override fun onAnimationEnd(animator: Animator) {
                     binding.assistantConstraintLayout.setVisibility(View.INVISIBLE)
                     finish()
                 }
 
-                override fun onAnimationCancel(p0: Animator?) {
-                    TODO("Not yet implemented")
-                }
-
-                override fun onAnimationRepeat(p0: Animator?) {
-                    TODO("Not yet implemented")
-                }
+                override fun onAnimationCancel(animator: Animator) {}
+                override fun onAnimationRepeat(animator: Animator) {}
             })
-
             circularReveal.duration = 1250
             circularReveal.start()
-
         } else {
             super.onBackPressed()
         }
@@ -898,6 +987,7 @@ class AssistantActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        // destroying
         textToSpeech.stop()
         textToSpeech.shutdown()
         speechRecognizer.cancel()
@@ -905,5 +995,4 @@ class AssistantActivity : AppCompatActivity() {
         Log.i(logsr, "destroy")
         Log.i(logtts, "destroy")
     }
-
 }

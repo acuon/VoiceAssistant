@@ -1,6 +1,5 @@
 package com.example.voiceassistant.assistant
 
-
 import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -8,10 +7,9 @@ import com.example.voiceassistant.data.AssistantDao
 import java.lang.IllegalArgumentException
 
 class AssistantViewModelFactory (
-
     private val dataSource: AssistantDao,
-
-    private val application: Application): ViewModelProvider.Factory
+    private val application: Application
+    ): ViewModelProvider.Factory
 
 {
     @Suppress("UNCHECKED_CAST")

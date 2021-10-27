@@ -3,8 +3,9 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
-        <entry key="..\:/AndroidStudioProjects/VoiceAssistant/app/src/main/res/layout/activity_assistant.xml" value="0.15534420289855072" />
-        <entry key="..\:/AndroidStudioProjects/VoiceAssistant/app/src/main/res/layout/activity_main.xml" value="0.15534420289855072" />
+        <entry key="..\:/AndroidStudioProjects/VoiceAssistant/app/src/main/res/drawable/ic_baseline_mic_24.xml" value="0.1" />
+        <entry key="..\:/AndroidStudioProjects/VoiceAssistant/app/src/main/res/layout/activity_assistant.xml" value="0.1" />
+        <entry key="..\:/AndroidStudioProjects/VoiceAssistant/app/src/main/res/layout/activity_main.xml" value="0.1" />
         <entry key="..\:/AndroidStudioProjects/VoiceAssistant/app/src/main/res/layout/assistant_item_layout.xml" value="0.1" />
       </map>
     </option>
